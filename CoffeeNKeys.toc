@@ -1,0 +1,12 @@
+## Interface: 100207
+## Author: farrjere 
+## Version: 0.0.1
+## Title: Coffee and Keys
+## Notes: An addon for managing mythic plus key group assignment from a raid
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## OptionalDeps: _DebugLog, BugSack, BugGrabber
+## AddonCompartmentFunc: XF_ToggleOptions
+
+embeds.xml
+Core.lua
