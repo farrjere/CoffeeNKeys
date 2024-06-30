@@ -20,21 +20,28 @@ function MyAddon:ListGroupScore(input)
 	local playerName = GetUnitName("player")
 	local roster = GetRoster(playerName)
 
-	MyAddon:Print(#roster)
 	local dpsRanked, healersRanked, tanksRanked = SortRoles(roster)
-	MyAddon:Print(tanksRanked)
 	local parties = ByParty(roster)
 	local newParties = ComputeParties(tanksRanked, healersRanked, dpsRanked)
+	MyAddon:Print("new parties: " .. #newParties)
 	if input == "assign" then
 		AssignParties(tanksRanked, healersRanked, dpsRanked, parties, newParties)
 	else
-		MyAddon:Print("Name - Group - Role - Score")
+		MyAddon:Print("Name - Group - New Group - Role - Score")
 		for i = 1, #newParties do
 			local party = newParties[i]
 			for pm = 1, #party do
 				local entry = party[pm]
 				MyAddon:Print(
-					entry["name"] .. " - " .. entry["subgroup"] .. " - " .. entry["role"] .. " - " .. entry["score"]
+					entry["name"]
+						.. " - "
+						.. entry["subgroup"]
+						.. " - "
+						.. i
+						.. " - "
+						.. entry["role"]
+						.. " - "
+						.. entry["score"]
 				)
 			end
 		end
@@ -85,7 +92,6 @@ function ComputeParties(tanksRanked, healersRanked, dpsRanked)
 		local entry = tanksRanked[tInd]
 		table.insert(newParties[tInd], entry)
 	end
-
 	for hInd = 1, #healersRanked do
 		local entry = healersRanked[hInd]
 		if hInd < #tanksRanked and hInd < 9 then
@@ -157,7 +163,6 @@ function ByParty(roster)
 end
 
 function SortRoles(roster)
-	local newRoster = {}
 	local healersRanked = {}
 	local healerInd = 1
 	local tanksRanked = {}
@@ -165,11 +170,11 @@ function SortRoles(roster)
 	local dpsRanked = {}
 	local dpsInd = 1
 	for i = 1, #roster do
-		entry = roster[i]
-		if roster["role"] == "DAMAGER" then
+		local entry = roster[i]
+		if entry["role"] == "DAMAGER" then
 			dpsRanked[dpsInd] = entry
 			dpsInd = dpsInd + 1
-		elseif roster["role"] == "HEALER" then
+		elseif entry["role"] == "HEALER" then
 			healersRanked[healerInd] = entry
 			healerInd = healerInd + 1
 		else
