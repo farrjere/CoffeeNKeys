@@ -25,7 +25,7 @@ function MyAddon:ListGroupScore(input)
 	local newParties = ComputeParties(tanksRanked, healersRanked, dpsRanked)
 	MyAddon:Print("new parties: " .. #newParties)
 	if input == "assign" then
-		AssignParties(tanksRanked, healersRanked, dpsRanked, parties, newParties)
+		AssignParties(parties, newParties)
 	else
 		MyAddon:Print("Name - Group - New Group - Role - Score")
 		for i = 1, #newParties do
@@ -48,7 +48,7 @@ function MyAddon:ListGroupScore(input)
 	end
 end
 
-function AssignParties(tanksRanked, healersRanked, dpsRanked, parties, newParties)
+function AssignParties(parties, newParties)
 	for pInd = 1, 8 do
 		local party = newParties[pInd]
 		for ind = 1, #party do
