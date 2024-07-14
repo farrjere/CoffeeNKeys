@@ -5,6 +5,7 @@ function MyAddon:OnInitialize()
 	-- AceConsole used as a mixin for AceAddon
 	MyAddon:Print("Hello, world!")
 	MyAddon:RegisterChatCommand("cnkl", "ListGroupScore")
+	MyAddon:RegisterChatCommand("cnkr", "PrintRating")
 end
 
 function MyAddon:OnEnable()
@@ -15,8 +16,12 @@ function MyAddon:OnDisable()
 	-- Called when the addon is disabled
 end
 
+function MyAddon:PrintRating(input)
+	local ratingS = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(input)
+	MyAddon:Print("Score " .. ratingS.currentSeasonScore)
+end
+
 function MyAddon:ListGroupScore(input)
-	MyAddon:Print("Hi from the slash command")
 	local playerName = GetUnitName("player")
 	local roster = GetRoster(playerName)
 
@@ -130,9 +135,15 @@ function GetRoster(playerName)
 		local actualRole = UnitGroupRolesAssigned(playerToken)
 		local score = 0
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(playerToken)
-		if ratingSummary ~= nil then
+		if false then
 			score = ratingSummary.currentSeasonScore
 			MyAddon:Print(ratingSummary.currentSeasonScore)
+		else
+			ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(name)
+			if ratingSummary then
+				score = ratingSummary.currentSeasonScore
+				MyAddon:Print(ratingSummary.currentSeasonScore)
+			end
 		end
 		local entry = {}
 		entry["name"] = name
