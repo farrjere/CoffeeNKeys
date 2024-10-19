@@ -1,43 +1,163 @@
-MyAddon = LibStub("AceAddon-3.0"):NewAddon("MyAddon", "AceConsole-3.0")
+CoffeeNKeys = LibStub("AceAddon-3.0"):NewAddon("CoffeeNKeys", "AceConsole-3.0")
+-- Create a container frame
+local AceGUI = LibStub("AceGUI-3.0")
+local AceComm = LibStub("AceComm-3.0")
 
-function MyAddon:OnInitialize()
+IS_DPS = false
+IS_HEALER = false
+IS_TANK = false
+LOWER = 0
+UPPER = 0
+
+function CoffeeNKeys:OnInitialize()
 	-- Code that you want to run when the addon is first loaded goes here.
 	-- AceConsole used as a mixin for AceAddon
-	MyAddon:Print("Hello, world!")
-	MyAddon:RegisterChatCommand("cnkl", "ListGroupScore")
-	MyAddon:RegisterChatCommand("cnkr", "PrintRating")
+	CoffeeNKeys:Print("Hello, world!")
+	CoffeeNKeys:RegisterChatCommand("cnkl", "HandleCommand")
+	AceComm:RegisterComm("CNKRoleSet", CoffeeNKeys.OnCommReceived)
 end
 
-function MyAddon:OnEnable()
+function CoffeeNKeys:HandleCommand(input)
+	if input == "list" then
+		CoffeeNKeys:ListGroupScore(input)
+	elseif input == "start" then
+		CoffeeNKeys:OpenAssignFrame(input)
+	end
+end
+
+function CoffeeNKeys:OnCommReceived(prefix, message, distribution, sender)
+	if prefix ~= nil then
+		print("Prefix: ".. prefix)
+	end
+	if message ~= nil then
+		print("Message: ".. message)
+	end
+	if distribution ~= nil then
+		print("distribution: ".. distribution)
+	end
+	if sender ~= nil then
+		print("Sender: ".. sender)
+	end
+end
+
+function CoffeeNKeys:OpenAssignFrame(input)
+	local f = AceGUI:Create("Frame")
+	f:SetCallback("OnClose",function(widget) AceGUI:Release(widget) end)
+	f:SetStatusText("")
+	f:SetTitle("Coffee and Keys Role")
+	f:SetLayout("Flow")
+	f:SetHeight(200)
+	local heading = AceGUI:Create("Heading")
+	heading.width = "fill"
+	heading:SetText("Roles")
+	f:AddChild(heading)
+
+	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("DPS"))
+	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Healer"))
+	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Tank"))
+	
+	local heading = AceGUI:Create("Heading")
+	heading:SetText("Key Level")
+	heading.width = "fill"
+	f:AddChild(heading)
+
+	local keyLowerSlider = AceGUI:Create("Slider")
+	keyLowerSlider:SetValue(LOWER)
+	keyLowerSlider:SetSliderValues(0, 40, 1)
+	keyLowerSlider:SetLabel("Lower Level")
+	keyLowerSlider:SetCallback("OnValueChanged", function(widget, event, value) LOWER = value end)
+	
+	f:AddChild(keyLowerSlider)
+
+	local keyUpperSlider = AceGUI:Create("Slider")
+	keyUpperSlider:SetValue(UPPER)
+	keyUpperSlider:SetSliderValues(0, 40, 1)
+	keyUpperSlider:SetLabel("Upper Level")
+	keyUpperSlider:SetCallback("OnValueChanged", function(widget, event, value) UPPER = value end)
+	f:AddChild(keyUpperSlider)
+
+	-- Create a button
+	local btn = AceGUI:Create("Button")
+	btn:SetText("Set")
+	btn:SetCallback("OnClick", function() CoffeeNKeys:SetRoles(f) end)
+
+	-- Add the button to the container
+	f:AddChild(btn)
+	f:Show()
+end
+
+function CoffeeNKeys:SetRoles(widget)
+	print("DPS: "..tostring(IS_DPS))
+	print("Healer: "..tostring(IS_HEALER))
+	print("Tank: "..tostring(IS_TANK))
+	print("Upper:"..tostring(UPPER))
+	print("Lower:"..tostring(LOWER))
+	local playerName = GetUnitName("player", false)
+	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER) .. "," .. tostring(LOWER)
+	local leader = GetLeader()
+	AceComm:SendCommMessage("CNKRoleSet", message, "RAID", leader, "NORMAL")
+	AceGUI:Release(widget)
+end
+
+function SetRole(role, value)
+	if role == "DPS" then
+		IS_DPS = value
+	elseif role == "Tank" then
+		IS_TANK = value
+	else
+		IS_HEALER = value
+	end
+end
+
+function CoffeeNKeys:CreateRoleCheckbox(role)
+	local radio = AceGUI:Create("CheckBox")
+	radio:SetLabel(role)
+	radio:SetCallback("OnValueChanged",function(widget,event,value) SetRole(role, value) end )
+	radio:SetType("radio")
+	return radio
+end
+
+function CoffeeNKeys:OnEnable()
 	-- Called when the addon is enabled
 end
 
-function MyAddon:OnDisable()
+function CoffeeNKeys:OnDisable()
 	-- Called when the addon is disabled
 end
 
-function MyAddon:PrintRating(input)
+function CoffeeNKeys:PrintRating(input)
 	local ratingS = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(input)
-	MyAddon:Print("Score " .. ratingS.currentSeasonScore)
+	CoffeeNKeys:Print("Score " .. ratingS.currentSeasonScore)
 end
 
-function MyAddon:ListGroupScore(input)
-	local playerName = GetUnitName("player")
+function GetLeader()
+	local playerName = GetUnitName("player", false)
+	local roster = GetRoster(playerName)
+	for i = 1, #roster do
+		local entry = roster[i]
+		if entry["rank"] == 2 then 
+			return entry["name"]
+		end
+	end
+end
+
+function CoffeeNKeys:ListGroupScore(input)
+	local playerName = GetUnitName("player", false)
 	local roster = GetRoster(playerName)
 
 	local dpsRanked, healersRanked, tanksRanked = SortRoles(roster)
 	local parties = ByParty(roster)
 	local newParties = ComputeParties(tanksRanked, healersRanked, dpsRanked)
-	MyAddon:Print("new parties: " .. #newParties)
+	CoffeeNKeys:Print("new parties: " .. #newParties)
 	if input == "assign" then
 		AssignParties(parties, newParties)
 	else
-		MyAddon:Print("Name - Group - New Group - Role - Score")
+		CoffeeNKeys:Print("Name - Group - New Group - Role - Score")
 		for i = 1, #newParties do
 			local party = newParties[i]
 			for pm = 1, #party do
 				local entry = party[pm]
-				MyAddon:Print(
+				CoffeeNKeys:Print(
 					entry["name"]
 						.. " - "
 						.. entry["subgroup"]
@@ -137,12 +257,12 @@ function GetRoster(playerName)
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(playerToken)
 		if false then
 			score = ratingSummary.currentSeasonScore
-			MyAddon:Print(ratingSummary.currentSeasonScore)
+			CoffeeNKeys:Print(ratingSummary.currentSeasonScore)
 		else
 			ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(name)
 			if ratingSummary then
 				score = ratingSummary.currentSeasonScore
-				MyAddon:Print(ratingSummary.currentSeasonScore)
+				CoffeeNKeys:Print(ratingSummary.currentSeasonScore)
 			end
 		end
 		local entry = {}
@@ -151,6 +271,7 @@ function GetRoster(playerName)
 		entry["role"] = actualRole
 		entry["raidInd"] = i
 		entry["subgroup"] = subgroup
+		entry["rank"] = rank
 		roster[i] = entry
 	end
 	return roster
