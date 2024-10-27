@@ -1,8 +1,15 @@
 CoffeeNKeys = LibStub("AceAddon-3.0"):NewAddon("CoffeeNKeys", "AceConsole-3.0")
+local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
+local bunnyLDB = ldb:NewDataObject("Bunnies", {  
+	type = "data source",  
+	text = "Bunnies!",  
+	icon = "Interface\\Icons\\INV_Chest_Cloth_17",  
+	OnClick = function() CoffeeNKeys:OpenSetRoleFrame() end,  
+})  
 -- Create a container frame
 local AceGUI = LibStub("AceGUI-3.0")
 local AceComm = LibStub("AceComm-3.0")
-
+local icon = LibStub("LibDBIcon-1.0") 
 IS_DPS = false
 IS_HEALER = false
 IS_TANK = false
@@ -15,13 +22,21 @@ function CoffeeNKeys:OnInitialize()
 	CoffeeNKeys:Print("Hello, world!")
 	CoffeeNKeys:RegisterChatCommand("cnkl", "HandleCommand")
 	AceComm:RegisterComm("CNKRoleSet", CoffeeNKeys.OnCommReceived)
+	self.db = LibStub("AceDB-3.0"):New("BunniesDB", {
+		profile = {
+			minimap = {
+				hide = false,
+			},
+		},
+	})
+	icon:Register("Bunnies", bunnyLDB, self.db.profile.minimap)
 end
 
 function CoffeeNKeys:HandleCommand(input)
 	if input == "list" then
 		CoffeeNKeys:ListGroupScore(input)
 	elseif input == "start" then
-		CoffeeNKeys:OpenAssignFrame(input)
+		CoffeeNKeys:OpenSetRoleFrame(input)
 	end
 end
 
@@ -40,7 +55,8 @@ function CoffeeNKeys:OnCommReceived(prefix, message, distribution, sender)
 	end
 end
 
-function CoffeeNKeys:OpenAssignFrame(input)
+
+function CoffeeNKeys:OpenSetRoleFrame(input)
 	local f = AceGUI:Create("Frame")
 	f:SetCallback("OnClose",function(widget) AceGUI:Release(widget) end)
 	f:SetStatusText("")
