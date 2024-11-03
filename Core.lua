@@ -10,12 +10,16 @@ local bunnyLDB = ldb:NewDataObject("Bunnies", {
 local AceGUI = LibStub("AceGUI-3.0")
 local AceComm = LibStub("AceComm-3.0")
 local icon = LibStub("LibDBIcon-1.0") 
+local PLAYERS = {}
 IS_DPS = false
 IS_HEALER = false
 IS_TANK = false
-LOWER = 0
-UPPER = 0
-
+LOWER_HEAL = 0
+UPPER_HEAL= 0
+LOWER_TANK = 0
+UPPER_TANK= 0
+LOWER_DPS = 0
+UPPER_DPS = 0
 function CoffeeNKeys:OnInitialize()
 	-- Code that you want to run when the addon is first loaded goes here.
 	-- AceConsole used as a mixin for AceAddon
@@ -55,6 +59,9 @@ function CoffeeNKeys:OnCommReceived(prefix, message, distribution, sender)
 	end
 end
 
+function CoffeeNKeys:AddTableEntry(message, sender)
+
+end
 
 function CoffeeNKeys:OpenSetRoleFrame(input)
 	local f = AceGUI:Create("Frame")
@@ -62,35 +69,17 @@ function CoffeeNKeys:OpenSetRoleFrame(input)
 	f:SetStatusText("")
 	f:SetTitle("Coffee and Keys Role")
 	f:SetLayout("Flow")
-	f:SetHeight(200)
-	local heading = AceGUI:Create("Heading")
-	heading.width = "fill"
-	heading:SetText("Roles")
-	f:AddChild(heading)
+	f:SetHeight(300)
 
-	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("DPS"))
-	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Healer"))
-	f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Tank"))
+	-- local heading = AceGUI:Create("Heading")
+	-- heading:SetText("Key Level")
+	-- heading.width = "fill"
+	-- f:AddChild(heading)
 	
-	local heading = AceGUI:Create("Heading")
-	heading:SetText("Key Level")
-	heading.width = "fill"
-	f:AddChild(heading)
-
-	local keyLowerSlider = AceGUI:Create("Slider")
-	keyLowerSlider:SetValue(LOWER)
-	keyLowerSlider:SetSliderValues(0, 40, 1)
-	keyLowerSlider:SetLabel("Lower Level")
-	keyLowerSlider:SetCallback("OnValueChanged", function(widget, event, value) LOWER = value end)
-	
-	f:AddChild(keyLowerSlider)
-
-	local keyUpperSlider = AceGUI:Create("Slider")
-	keyUpperSlider:SetValue(UPPER)
-	keyUpperSlider:SetSliderValues(0, 40, 1)
-	keyUpperSlider:SetLabel("Upper Level")
-	keyUpperSlider:SetCallback("OnValueChanged", function(widget, event, value) UPPER = value end)
-	f:AddChild(keyUpperSlider)
+	-- f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Healer"))
+	CoffeeNKeys:CreateRole(f, "DPS", LOWER_DPS, UPPER_DPS)
+	CoffeeNKeys:CreateRole(f, "Healer", LOWER_HEAL, UPPER_HEAL)
+	CoffeeNKeys:CreateRole(f, "Tank", LOWER_TANK, UPPER_TANK)
 
 	-- Create a button
 	local btn = AceGUI:Create("Button")
@@ -106,8 +95,8 @@ function CoffeeNKeys:SetRoles(widget)
 	print("DPS: "..tostring(IS_DPS))
 	print("Healer: "..tostring(IS_HEALER))
 	print("Tank: "..tostring(IS_TANK))
-	print("Upper:"..tostring(UPPER))
-	print("Lower:"..tostring(LOWER))
+	print("Upper:"..tostring(UPPER_DPS).." "..tostring(UPPER_HEAL).." "..tostring(UPPER_TANK))
+	print("Lower:"..tostring(LOWER_DPS).." "..tostring(LOWER_HEAL).." "..tostring(LOWER_TANK))
 	local playerName = GetUnitName("player", false)
 	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER) .. "," .. tostring(LOWER)
 	local leader = GetLeader()
@@ -125,12 +114,61 @@ function SetRole(role, value)
 	end
 end
 
+function SetRoleLowerSlider(role, value)
+	if role == "DPS" then
+		LOWER_DPS = value
+	elseif role == "Tank" then
+		LOWER_TANK = value
+	else
+		LOWER_HEAL = value
+	end
+end
+
+function SetRoleUpperSlider(role, value)
+	if role == "DPS" then
+		UPPER_DPS = value
+	elseif role == "Tank" then
+		UPPER_TANK = value
+	else
+		UPPER_HEAL = value
+	end
+end
+
 function CoffeeNKeys:CreateRoleCheckbox(role)
 	local radio = AceGUI:Create("CheckBox")
 	radio:SetLabel(role)
 	radio:SetCallback("OnValueChanged",function(widget,event,value) SetRole(role, value) end )
 	radio:SetType("radio")
 	return radio
+end
+
+function CoffeeNKeys:CreateRole(parent, role, lower, upper)
+	
+	local heading = AceGUI:Create("Heading")
+	heading.width = "fill"
+	heading:SetText(role)
+	parent:AddChild(heading)
+
+	local radio = AceGUI:Create("CheckBox")
+	radio:SetLabel(role)
+	radio:SetCallback("OnValueChanged",function(widget,event,value) SetRole(role, value) end )
+	radio:SetType("radio")
+	parent:AddChild(radio)
+
+	local lowSlider = AceGUI:Create("Slider")
+	lowSlider:SetValue(lower)
+	lowSlider:SetSliderValues(0, 20, 1)
+	lowSlider:SetLabel("Lower Level")
+	lowSlider:SetCallback("OnValueChanged", function(widget, event, value) SetRoleLowerSlider(role, value) end)
+	
+	parent:AddChild(lowSlider)
+
+	local upperSlider = AceGUI:Create("Slider")
+	upperSlider:SetValue(upper)
+	upperSlider:SetSliderValues(0, 20, 1)
+	upperSlider:SetLabel("Upper Level")
+	upperSlider:SetCallback("OnValueChanged", function(widget, event, value)  SetRoleUpperSlider(role, value) end)
+	parent:AddChild(upperSlider)
 end
 
 function CoffeeNKeys:OnEnable()
