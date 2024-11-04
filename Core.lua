@@ -10,16 +10,31 @@ local bunnyLDB = ldb:NewDataObject("Bunnies", {
 local AceGUI = LibStub("AceGUI-3.0")
 local AceComm = LibStub("AceComm-3.0")
 local icon = LibStub("LibDBIcon-1.0") 
-local PLAYERS = {}
+local TANKS = {}
+local HEALERS = {}
+local DPS = {}
 IS_DPS = false
 IS_HEALER = false
 IS_TANK = false
-LOWER_HEAL = 0
-UPPER_HEAL= 0
-LOWER_TANK = 0
-UPPER_TANK= 0
-LOWER_DPS = 0
-UPPER_DPS = 0
+LOWER_HEAL = 2
+UPPER_HEAL= 2
+LOWER_TANK = 2
+UPPER_TANK= 2
+LOWER_DPS = 2
+UPPER_DPS = 2
+
+
+function Split(inputstr, sep)
+	if sep == nil then
+	  sep = "%s"
+	end
+	local t = {}
+	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+	  table.insert(t, str)
+	end
+	return t
+  end
+
 function CoffeeNKeys:OnInitialize()
 	-- Code that you want to run when the addon is first loaded goes here.
 	-- AceConsole used as a mixin for AceAddon
@@ -41,26 +56,64 @@ function CoffeeNKeys:HandleCommand(input)
 		CoffeeNKeys:ListGroupScore(input)
 	elseif input == "start" then
 		CoffeeNKeys:OpenSetRoleFrame(input)
+	elseif input == "raid" then
+		CoffeeNKeys:ViewRaidFrame(input)
 	end
 end
 
 function CoffeeNKeys:OnCommReceived(prefix, message, distribution, sender)
 	if prefix ~= nil then
 		print("Prefix: ".. prefix)
+		CoffeeNKeys:AddTableEntry(prefix, distribution)
 	end
 	if message ~= nil then
-		print("Message: ".. message)
+		print("\nMessage: ".. message)
+		
 	end
 	if distribution ~= nil then
-		print("distribution: ".. distribution)
+		print("\ndistribution: ".. distribution)
 	end
 	if sender ~= nil then
-		print("Sender: ".. sender)
+		print("\nSender: ".. sender)
 	end
 end
 
 function CoffeeNKeys:AddTableEntry(message, sender)
+	local stringtoboolean={ ["true"]=true, ["false"]=false }
+	local messageValues = Split(message, ",")
+	local player = messageValues[1]
+	local dps = stringtoboolean[messageValues[2]]
+	local heal = stringtoboolean[messageValues[3]]
+	local tank = stringtoboolean[messageValues[4]]
+	local dpsUpper = messageValues[5]
+	local dpsLower = messageValues[6]
+	local healUpper = messageValues[7]
+	local healLower = messageValues[8]
+	local tankUpper = messageValues[9]
+	local tankLower = messageValues[10]
 
+	if dps then
+		DPS[player] = {tonumber(dpsLower), tonumber(dpsUpper)}
+	end
+	if heal then
+		HEALERS[player] = {tonumber(healLower), tonumber(healUpper)}	
+	end
+	if tank then
+		TANKS[player] = {tonumber(tankLower), tonumber(tankUpper)}
+	end
+	
+	for k, v in pairs(DPS) do
+		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+	end
+	
+	for k, v in pairs(HEALERS) do
+		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+	end
+
+	for k, v in pairs(TANKS) do
+		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+	end
+	
 end
 
 function CoffeeNKeys:OpenSetRoleFrame(input)
@@ -91,14 +144,64 @@ function CoffeeNKeys:OpenSetRoleFrame(input)
 	f:Show()
 end
 
+function CoffeeNKeys:ViewRaidFrame(input)
+	local frame = AceGUI:Create("Frame")
+	local ScrollingTable = LibStub("ScrollingTable");
+	local columnsList = {
+        { ["name"] = "Role",    ["width"] = 150 },
+        { ["name"] = "Name", ["width"] = 150, },
+        { ["name"] = "Lower Level",   ["width"] = 55, },
+        { ["name"] = "Upper Level",  ["width"] = 90, },
+    }
+
+
+	self.roleTable = ScrollingTable:CreateST(columnsList, 16, 16, nil, frame.frame);
+	-- self.roleTable.frame:SetPoint("TOP", frame.frame, "TOP", self.defaults.tables.anchors.top.x, self.defaults.tables.anchors.top.y);
+	-- self.tables.roleTable.frame:SetPoint("LEFT", frame.frame, "LEFT", self.defaults.tables.anchors.left.x, self.defaults.tables.anchors.left.y);
+	-- self.tables.roleTable:EnableSelection(true)
+	self.roleTable:SortData()
+	self.roleTable:Hide()
+	local tableData = {}
+	for k, v in pairs(DPS) do
+		local row = {}
+		table.insert(row, {value="DPS"})
+		table.insert(row, {value=k})
+		table.insert(row, {value=v[1]})
+		table.insert(row, {value=v[2]})
+		table.insert(tableData, {cols = row})
+	end
+	
+	for k, v in pairs(HEALERS) do
+		local row = {}
+		table.insert(row, {value="HEAL"})
+		table.insert(row, {value=k})
+		table.insert(row, {value=v[1]})
+		table.insert(row, {value=v[2]})
+		table.insert(tableData, {cols = row})
+	end
+
+	for k, v in pairs(TANKS) do
+		local row = {}
+		table.insert(row, {value="TANK"})
+		table.insert(row, {value=k})
+		table.insert(row, {value=v[1]})
+		table.insert(row, {value=v[2]})
+		table.insert(tableData, {cols = row})
+	end
+	self.roleTable:Show()
+	self.roleTable:SetData(tableData)
+	self.roleTable:SortData()
+	self.roleTable:Refresh()
+end
+
 function CoffeeNKeys:SetRoles(widget)
-	print("DPS: "..tostring(IS_DPS))
-	print("Healer: "..tostring(IS_HEALER))
-	print("Tank: "..tostring(IS_TANK))
-	print("Upper:"..tostring(UPPER_DPS).." "..tostring(UPPER_HEAL).." "..tostring(UPPER_TANK))
-	print("Lower:"..tostring(LOWER_DPS).." "..tostring(LOWER_HEAL).." "..tostring(LOWER_TANK))
+	-- print("DPS: "..tostring(IS_DPS))
+	-- print("Healer: "..tostring(IS_HEALER))
+	-- print("Tank: "..tostring(IS_TANK))
+	-- print("Upper:"..tostring(UPPER_DPS).." "..tostring(UPPER_HEAL).." "..tostring(UPPER_TANK))
+	-- print("Lower:"..tostring(LOWER_DPS).." "..tostring(LOWER_HEAL).." "..tostring(LOWER_TANK))
 	local playerName = GetUnitName("player", false)
-	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER) .. "," .. tostring(LOWER)
+	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER_DPS) .. "," .. tostring(LOWER_DPS) .. "," .. tostring(UPPER_HEAL) .. "," .. tostring(LOWER_HEAL) .. "," .. tostring(UPPER_TANK) .. "," .. tostring(LOWER_TANK)
 	local leader = GetLeader()
 	AceComm:SendCommMessage("CNKRoleSet", message, "RAID", leader, "NORMAL")
 	AceGUI:Release(widget)
@@ -157,7 +260,7 @@ function CoffeeNKeys:CreateRole(parent, role, lower, upper)
 
 	local lowSlider = AceGUI:Create("Slider")
 	lowSlider:SetValue(lower)
-	lowSlider:SetSliderValues(0, 20, 1)
+	lowSlider:SetSliderValues(2, 20, 1)
 	lowSlider:SetLabel("Lower Level")
 	lowSlider:SetCallback("OnValueChanged", function(widget, event, value) SetRoleLowerSlider(role, value) end)
 	
@@ -165,7 +268,7 @@ function CoffeeNKeys:CreateRole(parent, role, lower, upper)
 
 	local upperSlider = AceGUI:Create("Slider")
 	upperSlider:SetValue(upper)
-	upperSlider:SetSliderValues(0, 20, 1)
+	upperSlider:SetSliderValues(2, 20, 1)
 	upperSlider:SetLabel("Upper Level")
 	upperSlider:SetCallback("OnValueChanged", function(widget, event, value)  SetRoleUpperSlider(role, value) end)
 	parent:AddChild(upperSlider)
