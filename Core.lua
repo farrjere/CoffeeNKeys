@@ -1,5 +1,6 @@
 CoffeeNKeys = LibStub("AceAddon-3.0"):NewAddon("CoffeeNKeys", "AceConsole-3.0")
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
+
 local bunnyLDB = ldb:NewDataObject("Bunnies", {  
 	type = "data source",  
 	text = "Bunnies!",  
@@ -93,25 +94,34 @@ function CoffeeNKeys:AddTableEntry(message, sender)
 	local tankLower = messageValues[10]
 
 	if dps then
-		DPS[player] = {tonumber(dpsLower), tonumber(dpsUpper)}
+		local entry = {}
+		entry.low = tonumber(dpsLower)
+		entry.high = tonumber(dpsUpper)
+		DPS[player] = entry
 	end
 	if heal then
-		HEALERS[player] = {tonumber(healLower), tonumber(healUpper)}	
+		local entry = {}
+		entry.low = tonumber(healLower)
+		entry.high = tonumber(healUpper)
+		HEALERS[player] = entry
 	end
 	if tank then
-		TANKS[player] = {tonumber(tankLower), tonumber(tankUpper)}
+		local entry = {}
+		entry.low = tonumber(tankLower)
+		entry.high = tonumber(tankUpper)
+		TANKS[player] = entry
 	end
 	
 	for k, v in pairs(DPS) do
-		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
 	end
 	
 	for k, v in pairs(HEALERS) do
-		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
 	end
 
 	for k, v in pairs(TANKS) do
-		print(k .. " " .. tostring(v[1]) .. " " .. tostring(v[2]))
+		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
 	end
 	
 end
@@ -144,50 +154,103 @@ function CoffeeNKeys:OpenSetRoleFrame(input)
 	f:Show()
 end
 
+function ToSortedList(t)
+	local newList = {}
+	
+	for k, v in pairs(t) do
+		local entry = {}
+		entry.name = k
+		entry.low = v.low
+		entry.high = v.high
+		table.insert(newList, entry)
+	end
+	table.sort(newList, LevelSort)
+	return newList
+end
+
+function CreateRow(role, existing) 
+	local row = {}
+	table.insert(row, {value=role})
+	table.insert(row, {value=existing.name})
+	table.insert(row, {value=existing.low})
+	table.insert(row, {value=existing.high})
+	return row
+end
+
 function CoffeeNKeys:ViewRaidFrame(input)
 	local frame = AceGUI:Create("Frame")
 	local ScrollingTable = LibStub("ScrollingTable");
 	local columnsList = {
-        { ["name"] = "Role",    ["width"] = 150 },
+        { ["name"] = "Role",    ["width"] = 60 },
         { ["name"] = "Name", ["width"] = 150, },
-        { ["name"] = "Lower Level",   ["width"] = 55, },
-        { ["name"] = "Upper Level",  ["width"] = 90, },
+        { ["name"] = "Lower Level",   ["width"] = 90, },
+        { ["name"] = "Upper Level",  ["width"] = 90, ["defaultsort"] = "dsc"},
     }
 
 
 	self.roleTable = ScrollingTable:CreateST(columnsList, 16, 16, nil, frame.frame);
 	-- self.roleTable.frame:SetPoint("TOP", frame.frame, "TOP", self.defaults.tables.anchors.top.x, self.defaults.tables.anchors.top.y);
 	-- self.tables.roleTable.frame:SetPoint("LEFT", frame.frame, "LEFT", self.defaults.tables.anchors.left.x, self.defaults.tables.anchors.left.y);
-	-- self.tables.roleTable:EnableSelection(true)
+	self.roleTable:EnableSelection(true)
 	self.roleTable:SortData()
 	self.roleTable:Hide()
 	local tableData = {}
-	for k, v in pairs(DPS) do
-		local row = {}
-		table.insert(row, {value="DPS"})
-		table.insert(row, {value=k})
-		table.insert(row, {value=v[1]})
-		table.insert(row, {value=v[2]})
+	local tanks = ToSortedList(TANKS)
+	local healers = ToSortedList(HEALERS)
+	local dpss = ToSortedList(DPS)
+	local dpsInd = 1
+	for i = 1, #tanks do
+		local tank = tanks[i]
+		local row = CreateRow("TANK", tank)
+		table.insert(tableData, {cols = row})
+		if i <= #healers then
+			local healer = healers[i]
+			row = CreateRow("HEAL", healer)
+			table.insert(tableData, {cols = row})
+		end
+		if dpsInd <= #dpss then
+			local step = math.min(dpsInd+2, #dpss)
+			for j = dpsInd,step do
+				local dps = dpss[j]
+				row = CreateRow("DPS", dps)
+				table.insert(tableData, {cols = row})
+			end
+			dpsInd = step + 1
+		end
+	end
+
+	for i = #tanks+1, #healers do
+		if i <= #healers then
+			local healer = healers[i]
+			local row = CreateRow("HEAL", healer)
+			table.insert(tableData, {cols = row})
+		end
+	end
+
+	for i = dpsInd, #dpss do
+		local dps = dpss[i]
+		local row = CreateRow("DPS", dps)
 		table.insert(tableData, {cols = row})
 	end
 	
-	for k, v in pairs(HEALERS) do
-		local row = {}
-		table.insert(row, {value="HEAL"})
-		table.insert(row, {value=k})
-		table.insert(row, {value=v[1]})
-		table.insert(row, {value=v[2]})
-		table.insert(tableData, {cols = row})
-	end
+	-- for k, v in pairs(DPS) do
+	-- 	local row = {}
+	-- 	table.insert(row, {value="DPS"})
+	-- 	table.insert(row, {value=k})
+	-- 	table.insert(row, {value=v[1]})
+	-- 	table.insert(row, {value=v[2]})
+	-- 	table.insert(tableData, {cols = row})
+	-- end
+	
+	-- for k, v in pairs(HEALERS) do
+	-- 	local row = {}
+	-- 	table.insert(row, {value="HEAL"})
+	-- 	table.insert(row, {value=k})
+	-- 	table.insert(row, {value=v[1]})
+	-- 	table.insert(row, {value=v[2]})
+	-- 	table.insert(tableData, {cols = row})
+	-- end
 
-	for k, v in pairs(TANKS) do
-		local row = {}
-		table.insert(row, {value="TANK"})
-		table.insert(row, {value=k})
-		table.insert(row, {value=v[1]})
-		table.insert(row, {value=v[2]})
-		table.insert(tableData, {cols = row})
-	end
 	self.roleTable:Show()
 	self.roleTable:SetData(tableData)
 	self.roleTable:SortData()
@@ -436,6 +499,10 @@ end
 
 function ScoreSort(a, b)
 	return a.score > b.score
+end
+
+function LevelSort(a, b)
+	return a.high > b.high
 end
 
 function ByParty(roster)
