@@ -7,9 +7,9 @@
 ## LoadOnDemand: 0
 ## OptionalDeps: _DebugLog, BugSack, BugGrabber
 ## AddonCompartmentFunc: XF_ToggleOptions
-Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibStub.lua
 Libs\lib-st\lib-st.xml
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibSharedMedia-3.0.lua
 Libs\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0.lua
