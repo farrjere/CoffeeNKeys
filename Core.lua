@@ -1,11 +1,18 @@
 CoffeeNKeys = LibStub("AceAddon-3.0"):NewAddon("CoffeeNKeys", "AceConsole-3.0")
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
-
-local bunnyLDB = ldb:NewDataObject("Bunnies", {  
+ 
+local coffeeLdb = ldb:NewDataObject("CoffeeNKeys", {  
 	type = "data source",  
-	text = "Bunnies!",  
-	icon = "Interface\\Icons\\INV_Chest_Cloth_17",  
-	OnClick = function() CoffeeNKeys:OpenSetRoleFrame() end,  
+	text = "Coffee and Keys!",  
+	icon = "Interface\\Addons\\CoffeeNKeys\\icon.png",  
+	--icon = "Interface\\Addons\\MplusGains\\Textures\\icon.PNG",
+	OnClick = function(clickedframe, button)
+        if(button == "LeftButton") then
+			CoffeeNKeys:OpenSetRoleFrame()
+        elseif(button == "RightButton") then
+			CoffeeNKeys:ViewRaidFrame()
+		end
+	end,
 })  
 -- Create a container frame
 local AceGUI = LibStub("AceGUI-3.0")
@@ -39,7 +46,6 @@ function Split(inputstr, sep)
 function CoffeeNKeys:OnInitialize()
 	-- Code that you want to run when the addon is first loaded goes here.
 	-- AceConsole used as a mixin for AceAddon
-	CoffeeNKeys:Print("Hello, world!")
 	CoffeeNKeys:RegisterChatCommand("cnkl", "HandleCommand")
 	AceComm:RegisterComm("CNKRoleSet", CoffeeNKeys.OnCommReceived)
 	self.db = LibStub("AceDB-3.0"):New("BunniesDB", {
@@ -49,7 +55,7 @@ function CoffeeNKeys:OnInitialize()
 			},
 		},
 	})
-	icon:Register("Bunnies", bunnyLDB, self.db.profile.minimap)
+	icon:Register("CoffeeNKeys", coffeeLdb, self.db.profile.minimap)
 end
 
 function CoffeeNKeys:HandleCommand(input)
@@ -64,18 +70,7 @@ end
 
 function CoffeeNKeys:OnCommReceived(prefix, message, distribution, sender)
 	if prefix ~= nil then
-		print("Prefix: ".. prefix)
 		CoffeeNKeys:AddTableEntry(prefix, distribution)
-	end
-	if message ~= nil then
-		print("\nMessage: ".. message)
-		
-	end
-	if distribution ~= nil then
-		print("\ndistribution: ".. distribution)
-	end
-	if sender ~= nil then
-		print("\nSender: ".. sender)
 	end
 end
 
@@ -110,20 +105,7 @@ function CoffeeNKeys:AddTableEntry(message, sender)
 		entry.low = tonumber(tankLower)
 		entry.high = tonumber(tankUpper)
 		TANKS[player] = entry
-	end
-	
-	for k, v in pairs(DPS) do
-		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
-	end
-	
-	for k, v in pairs(HEALERS) do
-		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
-	end
-
-	for k, v in pairs(TANKS) do
-		print(k .. " " .. tostring(v.low) .. " " .. tostring(v.high))
-	end
-	
+	end	
 end
 
 function CoffeeNKeys:OpenSetRoleFrame(input)
@@ -134,12 +116,7 @@ function CoffeeNKeys:OpenSetRoleFrame(input)
 	f:SetLayout("Flow")
 	f:SetHeight(300)
 
-	-- local heading = AceGUI:Create("Heading")
-	-- heading:SetText("Key Level")
-	-- heading.width = "fill"
-	-- f:AddChild(heading)
 	
-	-- f:AddChild(CoffeeNKeys:CreateRoleCheckbox("Healer"))
 	CoffeeNKeys:CreateRole(f, "DPS", LOWER_DPS, UPPER_DPS)
 	CoffeeNKeys:CreateRole(f, "Healer", LOWER_HEAL, UPPER_HEAL)
 	CoffeeNKeys:CreateRole(f, "Tank", LOWER_TANK, UPPER_TANK)
@@ -179,6 +156,12 @@ end
 
 function CoffeeNKeys:ViewRaidFrame(input)
 	local frame = AceGUI:Create("Frame")
+	frame:SetStatusText("")
+	frame:SetTitle("Coffee and Keys Raid")
+	frame:SetLayout("Flow")
+	frame:SetHeight(400)
+	frame:SetWidth(500)
+
 	local ScrollingTable = LibStub("ScrollingTable");
 	local columnsList = {
         { ["name"] = "Role",    ["width"] = 60 },
@@ -232,24 +215,6 @@ function CoffeeNKeys:ViewRaidFrame(input)
 		local row = CreateRow("DPS", dps)
 		table.insert(tableData, {cols = row})
 	end
-	
-	-- for k, v in pairs(DPS) do
-	-- 	local row = {}
-	-- 	table.insert(row, {value="DPS"})
-	-- 	table.insert(row, {value=k})
-	-- 	table.insert(row, {value=v[1]})
-	-- 	table.insert(row, {value=v[2]})
-	-- 	table.insert(tableData, {cols = row})
-	-- end
-	
-	-- for k, v in pairs(HEALERS) do
-	-- 	local row = {}
-	-- 	table.insert(row, {value="HEAL"})
-	-- 	table.insert(row, {value=k})
-	-- 	table.insert(row, {value=v[1]})
-	-- 	table.insert(row, {value=v[2]})
-	-- 	table.insert(tableData, {cols = row})
-	-- end
 
 	self.roleTable:Show()
 	self.roleTable:SetData(tableData)
@@ -258,11 +223,6 @@ function CoffeeNKeys:ViewRaidFrame(input)
 end
 
 function CoffeeNKeys:SetRoles(widget)
-	-- print("DPS: "..tostring(IS_DPS))
-	-- print("Healer: "..tostring(IS_HEALER))
-	-- print("Tank: "..tostring(IS_TANK))
-	-- print("Upper:"..tostring(UPPER_DPS).." "..tostring(UPPER_HEAL).." "..tostring(UPPER_TANK))
-	-- print("Lower:"..tostring(LOWER_DPS).." "..tostring(LOWER_HEAL).." "..tostring(LOWER_TANK))
 	local playerName = GetUnitName("player", false)
 	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER_DPS) .. "," .. tostring(LOWER_DPS) .. "," .. tostring(UPPER_HEAL) .. "," .. tostring(LOWER_HEAL) .. "," .. tostring(UPPER_TANK) .. "," .. tostring(LOWER_TANK)
 	local leader = GetLeader()
@@ -368,11 +328,9 @@ function CoffeeNKeys:ListGroupScore(input)
 	local dpsRanked, healersRanked, tanksRanked = SortRoles(roster)
 	local parties = ByParty(roster)
 	local newParties = ComputeParties(tanksRanked, healersRanked, dpsRanked)
-	CoffeeNKeys:Print("new parties: " .. #newParties)
 	if input == "assign" then
 		AssignParties(parties, newParties)
 	else
-		CoffeeNKeys:Print("Name - Group - New Group - Role - Score")
 		for i = 1, #newParties do
 			local party = newParties[i]
 			for pm = 1, #party do
@@ -475,15 +433,11 @@ function GetRoster(playerName)
 		local actualRole = UnitGroupRolesAssigned(playerToken)
 		local score = 0
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(playerToken)
-		if false then
+		
+			
+		if ratingSummary then
 			score = ratingSummary.currentSeasonScore
-			CoffeeNKeys:Print(ratingSummary.currentSeasonScore)
-		else
-			ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(name)
-			if ratingSummary then
-				score = ratingSummary.currentSeasonScore
-				CoffeeNKeys:Print(ratingSummary.currentSeasonScore)
-			end
+			--CoffeeNKeys:Print(ratingSummary.currentSeasonScore)
 		end
 		local entry = {}
 		entry["name"] = name
