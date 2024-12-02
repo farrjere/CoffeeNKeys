@@ -13,7 +13,13 @@ local coffeeLdb = ldb:NewDataObject("CoffeeNKeys", {
 			CoffeeNKeys:ViewRaidFrame()
 		end
 	end,
-})  
+})
+
+function coffeeLdb:OnTooltipShow()
+    self:AddLine("CoffeeNKeys", 1, 1, 1)
+	self:AddLine("Left click: Set your roles")
+    self:AddLine("Right click: View raid info")
+end
 -- Create a container frame
 local AceGUI = LibStub("AceGUI-3.0")
 local AceComm = LibStub("AceComm-3.0")
