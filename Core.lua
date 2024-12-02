@@ -54,7 +54,7 @@ function CoffeeNKeys:OnInitialize()
 	-- AceConsole used as a mixin for AceAddon
 	CoffeeNKeys:RegisterChatCommand("cnkl", "HandleCommand")
 	AceComm:RegisterComm("CNKRoleSet", CoffeeNKeys.OnCommReceived)
-	self.db = LibStub("AceDB-3.0"):New("BunniesDB", {
+	self.db = LibStub("AceDB-3.0"):New("CoffeeNKeysDB", {
 		profile = {
 			minimap = {
 				hide = false,
