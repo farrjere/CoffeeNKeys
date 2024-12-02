@@ -185,8 +185,6 @@ function CoffeeNKeys:ViewRaidFrame(input)
 
 
 	self.roleTable = ScrollingTable:CreateST(columnsList, 16, 16, nil, frame.frame);
-	-- self.roleTable.frame:SetPoint("TOP", frame.frame, "TOP", self.defaults.tables.anchors.top.x, self.defaults.tables.anchors.top.y);
-	-- self.tables.roleTable.frame:SetPoint("LEFT", frame.frame, "LEFT", self.defaults.tables.anchors.left.x, self.defaults.tables.anchors.left.y);
 	self.roleTable:EnableSelection(true)
 	self.roleTable:SortData()
 	self.roleTable:Hide()
