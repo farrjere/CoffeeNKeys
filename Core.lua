@@ -87,23 +87,27 @@ function CoffeeNKeys:AddTableEntry(message, sender)
 	local healLower = messageValues[8]
 	local tankUpper = messageValues[9]
 	local tankLower = messageValues[10]
+	local score = messageValues[11]
 
 	if dps then
 		local entry = {}
 		entry.low = tonumber(dpsLower)
 		entry.high = tonumber(dpsUpper)
+		entry.score = tonumber(score)
 		DPS[player] = entry
 	end
 	if heal then
 		local entry = {}
 		entry.low = tonumber(healLower)
 		entry.high = tonumber(healUpper)
+		entry.score = tonumber(score)
 		HEALERS[player] = entry
 	end
 	if tank then
 		local entry = {}
 		entry.low = tonumber(tankLower)
 		entry.high = tonumber(tankUpper)
+		entry.score = tonumber(score)
 		TANKS[player] = entry
 	end	
 end
@@ -139,6 +143,7 @@ function ToSortedList(t)
 		entry.name = k
 		entry.low = v.low
 		entry.high = v.high
+		entry.score = v.score
 		table.insert(newList, entry)
 	end
 	table.sort(newList, LevelSort)
@@ -151,6 +156,7 @@ function CreateRow(role, existing)
 	table.insert(row, {value=existing.name})
 	table.insert(row, {value=existing.low})
 	table.insert(row, {value=existing.high})
+	table.insert(row, {value=existing.score})
 	return row
 end
 
@@ -168,6 +174,7 @@ function CoffeeNKeys:ViewRaidFrame(input)
         { ["name"] = "Name", ["width"] = 150, },
         { ["name"] = "Lower Level",   ["width"] = 90, },
         { ["name"] = "Upper Level",  ["width"] = 90, ["defaultsort"] = "dsc"},
+		{ ["name"] = "Rating",  ["width"] = 50, ["defaultsort"] = "dsc"},
     }
 
 
@@ -224,7 +231,8 @@ end
 
 function CoffeeNKeys:SetRoles(widget)
 	local playerName = GetUnitName("player", false)
-	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER_DPS) .. "," .. tostring(LOWER_DPS) .. "," .. tostring(UPPER_HEAL) .. "," .. tostring(LOWER_HEAL) .. "," .. tostring(UPPER_TANK) .. "," .. tostring(LOWER_TANK)
+	local rating = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player").currentSeasonScore
+	local message = playerName .. "," .. tostring(IS_DPS) .. "," .. tostring(IS_HEALER) .. "," .. tostring(IS_TANK) .. "," .. tostring(UPPER_DPS) .. "," .. tostring(LOWER_DPS) .. "," .. tostring(UPPER_HEAL) .. "," .. tostring(LOWER_HEAL) .. "," .. tostring(UPPER_TANK) .. "," .. tostring(LOWER_TANK) .."," .. tostring(rating)
 	local leader = GetLeader()
 	AceComm:SendCommMessage("CNKRoleSet", message, "RAID", leader, "NORMAL")
 	AceGUI:Release(widget)
